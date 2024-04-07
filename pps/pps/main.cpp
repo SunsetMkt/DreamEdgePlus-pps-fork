@@ -1,8 +1,10 @@
+
 #include <windows.h>
 #include <iostream>
 #include <tlhelp32.h>
 #include <fstream>
 #include "main.h"
+#pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"") // 设置入口地址
 
 #define EXENAME "Photoshop.exe"
 
@@ -14,7 +16,7 @@ int main(int argc, char *argv[])
     {
         std::cerr << "没有检测到PS，请把程序放在PS根目录。每次使用此程序来启动PS。" << std::endl;
         std::cout << "可以拖放图片到本程序，本程序可以传递给PS主程序" << std::endl;
-        system("pause");
+        // system("pause");
         return 0;
     }
 
