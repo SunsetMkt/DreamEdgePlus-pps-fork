@@ -1,4 +1,3 @@
-
 #include <windows.h>
 #include <iostream>
 #include <tlhelp32.h>
@@ -7,100 +6,109 @@
 
 #define EXENAME "Photoshop.exe"
 
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    std::string psPath = GetRunPath() + EXENAME; //ps主程序运行目录
-    
-    if (!FileExists(psPath)) {
+    std::string psPath = GetRunPath() + EXENAME; // ps主程序运行目录
+
+    if (!FileExists(psPath))
+    {
         std::cerr << "没有检测到PS，请把程序放在PS根目录。每次使用此程序来启动PS。" << std::endl;
         std::cout << "可以拖放图片到本程序，本程序可以传递给PS主程序" << std::endl;
         system("pause");
         return 0;
     }
 
-
     DWORD proId = RunProcess(psPath, argc, argv);
 
-    int num = 4; //验证窗口销毁次数，最低为3次。
-    while (true) {
+    int num = 4; // 验证窗口销毁次数，最低为3次。
+    while (true)
+    {
         HWND psWindowId = FindWindowByProcessIdAndClassName(proId, L"Photoshop");
-        if (psWindowId != nullptr) {
-            //查找子进程是否有效
-            std::vector<DWORD> subPros = GetChildProcessIds(proId); //获取子进程的ID组
-            for (DWORD proItem : subPros) {
-                if (GetProcessName(proItem) == "adobe_licensing_wf.exe") {
+        if (psWindowId != nullptr)
+        {
+            // 查找子进程是否有效
+            std::vector<DWORD> subPros = GetChildProcessIds(proId); // 获取子进程的ID组
+            for (DWORD proItem : subPros)
+            {
+                if (GetProcessName(proItem) == "adobe_licensing_wf.exe")
+                {
                     HWND wfWindowId = FindWindowByProcessIdAndClassName(proItem, L"EmbeddedWB");
-                    if (wfWindowId != nullptr) { //找到子项目
+                    if (wfWindowId != nullptr)
+                    { // 找到子项目
 
-                        if (num <= 0) {
-                            goto GOOUT; //结束程序
+                        if (num <= 0)
+                        {
+                            goto GOOUT; // 结束程序
                         }
                         num--;
-                        HideWindow(wfWindowId); //隐藏过期窗口
-                        DisableWindow(psWindowId); //解除PS窗口禁止状态
+                        HideWindow(wfWindowId);    // 隐藏过期窗口
+                        DisableWindow(psWindowId); // 解除PS窗口禁止状态
                     }
                 }
             }
-
         }
 
-        Sleep(100); //等待PS窗口启动
+        Sleep(100); // 等待PS窗口启动
 
-        if (!IsProcessRunning(proId)) { //如果进程不存在了，则跟随推出
-            //看看是否已经存在运行的PS了
+        if (!IsProcessRunning(proId))
+        { // 如果进程不存在了，则跟随推出
+            // 看看是否已经存在运行的PS了
             proId = GetProcessIdByName(EXENAME);
-            if (proId == 0) {
+            if (proId == 0)
+            {
                 return 0;
             }
             /*std::cout << "存在已经运行的程序" << proId << std::endl;
             std::cin >> proId;*/
-            num+=4;
+            num += 4;
         }
     }
 GOOUT:
 
-    std::vector<DWORD> subPros = GetChildProcessIds(proId); //获取子进程的ID组
+    std::vector<DWORD> subPros = GetChildProcessIds(proId); // 获取子进程的ID组
 
-    //for (DWORD proItem : subPros) {
-    //    std::string subProName = GetProcessName(proItem);
-    //    std::cout << subProName << std::endl;
-    //}
+    // for (DWORD proItem : subPros) {
+    //     std::string subProName = GetProcessName(proItem);
+    //     std::cout << subProName << std::endl;
+    // }
 
-
-    //结束子进程
-    //int killSubProLoop = 30; //循环中止2次
+    // 结束子进程
+    // int killSubProLoop = 30; //循环中止2次
     bool killSub = false;
     int killNum = 4;
-    while (true) {
-        
-        std::vector<DWORD> subPros = GetChildProcessIds(proId); //获取子进程的ID组
+    while (true)
+    {
 
-        if (subPros.size() > 10) { //多个附加进程被启动
+        std::vector<DWORD> subPros = GetChildProcessIds(proId); // 获取子进程的ID组
+
+        if (subPros.size() > 10)
+        { // 多个附加进程被启动
             killSub = true;
             killNum = 4;
         }
 
-        if (killSub) {
+        if (killSub)
+        {
             killSubProcess(subPros);
             killNum--;
         }
 
-        if (killNum < 0) {
+        if (killNum < 0)
+        {
             break;
         }
 
         Sleep(100);
 
-        if (!IsProcessRunning(proId)) { //如果进程不存在了，则跟随推出
+        if (!IsProcessRunning(proId))
+        { // 如果进程不存在了，则跟随推出
             return 0;
         }
     }
     return 0;
 }
 
-
-//获取程序运行目录
+// 获取程序运行目录
 std::string GetRunPath()
 {
     wchar_t buffer[MAX_PATH];
@@ -116,13 +124,13 @@ std::string GetRunPath()
     return "";
 }
 
-//运行指定程序，返回句柄
-DWORD RunProcess(std::string proPath, int argc, char* argv[])
+// 运行指定程序，返回句柄
+DWORD RunProcess(std::string proPath, int argc, char *argv[])
 {
     // 创建进程的结构体
-    STARTUPINFOA startupInfo = { 0 };
+    STARTUPINFOA startupInfo = {0};
     startupInfo.cb = sizeof(STARTUPINFOA);
-    PROCESS_INFORMATION processInfo = { 0 };
+    PROCESS_INFORMATION processInfo = {0};
 
     // 构建命令行参数字符串
     std::string commandLine;
@@ -132,10 +140,9 @@ DWORD RunProcess(std::string proPath, int argc, char* argv[])
         commandLine += " ";
     }
 
-
     // 创建进程
     if (!CreateProcessA(const_cast<LPSTR>(proPath.c_str()), const_cast<LPSTR>(commandLine.c_str()), nullptr,
-        nullptr, FALSE, 0, nullptr, nullptr, &startupInfo, &processInfo))
+                        nullptr, FALSE, 0, nullptr, nullptr, &startupInfo, &processInfo))
     {
         return 0;
     }
@@ -150,8 +157,8 @@ DWORD RunProcess(std::string proPath, int argc, char* argv[])
     return processId;
 }
 
-//根据进程名获取进程的ID
-DWORD GetProcessIdByName(const std::string& processName)
+// 根据进程名获取进程的ID
+DWORD GetProcessIdByName(const std::string &processName)
 {
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
@@ -180,7 +187,7 @@ DWORD GetProcessIdByName(const std::string& processName)
     return dwProcessId;
 }
 
-//根据进程ID获取子进程id组
+// 根据进程ID获取子进程id组
 std::vector<DWORD> GetChildProcessIds(DWORD parentProcessId)
 {
     std::vector<DWORD> childProcessIds;
@@ -206,7 +213,8 @@ std::vector<DWORD> GetChildProcessIds(DWORD parentProcessId)
             childProcessIds.push_back(processEntry.th32ProcessID);
 
             std::vector<DWORD> sub = GetChildProcessIds(processEntry.th32ProcessID);
-            for (DWORD subId : sub) { //递归加入孙子进程
+            for (DWORD subId : sub)
+            { // 递归加入孙子进程
                 childProcessIds.push_back(subId);
             }
         }
@@ -216,9 +224,8 @@ std::vector<DWORD> GetChildProcessIds(DWORD parentProcessId)
     return childProcessIds;
 }
 
-
-//根据进程id与窗口类名获取窗口id
-HWND FindWindowByProcessIdAndClassName(DWORD processId, const std::wstring& className)
+// 根据进程id与窗口类名获取窗口id
+HWND FindWindowByProcessIdAndClassName(DWORD processId, const std::wstring &className)
 {
     HWND windowHandle = NULL;
 
@@ -234,34 +241,34 @@ HWND FindWindowByProcessIdAndClassName(DWORD processId, const std::wstring& clas
             GetWindowThreadProcessId(windowHandle, &windowProcessId);
             if (windowProcessId == processId)
             {
-                return windowHandle;  // 找到匹配的窗口
+                return windowHandle; // 找到匹配的窗口
             }
         }
     } while (windowHandle != NULL);
 
-    return nullptr;  // 没有找到匹配的窗口
+    return nullptr; // 没有找到匹配的窗口
 }
 
-
-//解除窗口禁止状态
+// 解除窗口禁止状态
 void DisableWindow(HWND hwnd)
 {
     LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
     SetWindowLongPtr(hwnd, GWL_STYLE, style & ~WS_DISABLED);
 }
 
-//隐藏指定的窗口
+// 隐藏指定的窗口
 void HideWindow(HWND hwnd)
 {
     ShowWindow(hwnd, SW_HIDE);
 }
 
-//根据进程DWORD，关闭进程
+// 根据进程DWORD，关闭进程
 void TerminateProcessByPID(DWORD dwProcessId)
 {
     HANDLE hProcess;
     unsigned int tryNum = 0;
-    do {
+    do
+    {
         hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, dwProcessId);
         tryNum++;
     } while (hProcess == NULL && tryNum < 3);
@@ -273,7 +280,7 @@ void TerminateProcessByPID(DWORD dwProcessId)
     CloseHandle(hProcess);
 }
 
-//根据窗口hwnd获取窗口标题
+// 根据窗口hwnd获取窗口标题
 std::string GetWindowTitle(HWND hwnd)
 {
     int titleLength = GetWindowTextLengthW(hwnd);
@@ -282,7 +289,7 @@ std::string GetWindowTitle(HWND hwnd)
         return "";
     }
 
-    wchar_t* titleBuffer = new wchar_t[titleLength + 1];
+    wchar_t *titleBuffer = new wchar_t[titleLength + 1];
     GetWindowTextW(hwnd, titleBuffer, titleLength + 1);
 
     std::wstring windowTitleW(titleBuffer);
@@ -294,8 +301,7 @@ std::string GetWindowTitle(HWND hwnd)
     return windowTitle;
 }
 
-
-//获取进程名
+// 获取进程名
 std::string GetProcessName(DWORD processId)
 {
     std::string processName;
@@ -318,7 +324,7 @@ std::string GetProcessName(DWORD processId)
     return processName;
 }
 
-//判断进程是否还在运行
+// 判断进程是否还在运行
 bool IsProcessRunning(DWORD dwProcessId)
 {
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, dwProcessId);
@@ -334,26 +340,25 @@ bool IsProcessRunning(DWORD dwProcessId)
     return (dwExitCode == STILL_ACTIVE);
 }
 
-
-//判断文件是否存在
-bool FileExists(const std::string& filename)
+// 判断文件是否存在
+bool FileExists(const std::string &filename)
 {
     std::ifstream infile(filename);
     return infile.good();
 }
 
-
-//结束子进程
+// 结束子进程
 void killSubProcess(std::vector<DWORD> subPros)
 {
-    for (DWORD proItem : subPros) {
+    for (DWORD proItem : subPros)
+    {
         std::string subProName = GetProcessName(proItem);
         if (subProName == "adobe_licensing_wf_helper.exe" ||
             subProName == "Adobe Crash Processor.exe" ||
             subProName == "msedgewebview2.exe" ||
             subProName == "CCXProcess.exe" ||
-            subProName == "node.exe"
-            ) {
+            subProName == "node.exe")
+        {
             TerminateProcessByPID(proItem);
         }
     }
